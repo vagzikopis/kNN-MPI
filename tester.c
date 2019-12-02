@@ -25,45 +25,45 @@
 
 int main()
 {
-
-  // int nstart=5000  , nend=2500 , nstep=500;                    // corpus
-  int dstart=100   , dend=101   , dstep=1;                      // dimensions
-  // int kstart=5    , kend=10   , kstep=1;                     // # neighbors
-  // int p=4;
+  FILE *fp = fopen("sequentialdata.txt", "a");
+  fprintf(fp, "n,d,k,time\n");
   struct timeval start, end;
-  int n=2500,k=15,p=4;
-  // for(int n=nstart; n<nend; n+=nstep)
-  // {
-  //   for(int k=kstart; k<kend; k+=kstep)
-  //   {
+  int nstart=500  , nend=25500 , nstep=500;                    // corpus
+  int dstart=10   , dend=31   , dstep=10;                      // dimensions
+  int kstart=10   , kend=51   , kstep=10;                     // # neighbors
+  for(int n=nstart; n<nend; n+=nstep)
+  {
+    for(int k=kstart; k<kend; k+=kstep)
+    {
       for(int d=dstart; d<dend; d+=dstep)
       {
-        double  * corpus = (double * ) malloc( p*n*d * sizeof(double) );
+        double  * corpus = (double * ) malloc( n*d * sizeof(double) );
 
 
-        for (int i=0;i<p*n*d;i++)
+        for (int i=0;i<n*d;i++)
         {
           corpus[i] = ( (double) (rand()) ) / (double) RAND_MAX;
         }
 
         gettimeofday(&start,NULL);
-        knnresult knnres = kNN( corpus, corpus, p*n, p*n, d, k );
+        knnresult knnres = kNN( corpus, corpus, n, n, d, k );
         gettimeofday(&end,NULL);
-        printf("np:%d d:%d k:%d time:%lf\n",n*p,d,k, (double)((end.tv_usec - start.tv_usec)/1.0e6 + end.tv_sec - start.tv_sec));
-        int isValidC = validateResult( knnres, corpus, corpus, p*n, p*n, d, k, COLMAJOR );
-        // int isValidR = validateResult( knnres, corpus, query, p*n, p*m, d, k, ROWMAJOR );
-        if(isValidC)
-        {
-          printf("Tester validation: "GRN"%s NEIGHBORS\n"RESET, STR_CORRECT_WRONG[isValidC]);
-        }else
-        {
-          printf("Tester validation: "RED"%s NEIGHBORS\n"RESET, STR_CORRECT_WRONG[isValidC]);
-        }
+        fprintf(fp,"%d,%d,%d,%lf\n",n,d,k,(double)((end.tv_usec - start.tv_usec)/1.0e6 + end.tv_sec - start.tv_sec));
+        // int isValidC = validateResult( knnres, corpus, corpus, p*n, p*n, d, k, COLMAJOR );
+        // // int isValidR = validateResult( knnres, corpus, query, p*n, p*m, d, k, ROWMAJOR );
+        // if(isValidC)
+        // {
+        //   printf("Tester validation: "GRN"%s NEIGHBORS\n"RESET, STR_CORRECT_WRONG[isValidC]);
+        // }else
+        // {
+        //   printf("Tester validation: "RED"%s NEIGHBORS\n"RESET, STR_CORRECT_WRONG[isValidC]);
+        // }
 
         free( corpus );
       }
-  //   }
-  // }
+    }
+  }
+  fclose(fp);
   return 0;
 
 }

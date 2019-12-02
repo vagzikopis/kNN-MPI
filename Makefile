@@ -18,12 +18,14 @@ test_synchronous:
 	# tar -xvzf code.tar.gz
 	cd knnring; make lib; cd ..
 	cd knnring; cp lib/*.a inc/knnring.h ../; cd ..
-	$(MPICC) tester_mpi.c knnring_synchronous.a -o $@ -lm -lopenblas -O3
+	$(MPICC) tester_synchronous.c knnring_synchronous.a -o test_synchronous -lm -lopenblas -O3
 	$(MPIRUN) ./test_synchronous
+
+	
 
 test_asynchronous:
 	# tar -xvzf code.tar.gz
 	cd knnring; make lib; cd ..
 	cd knnring; cp lib/*.a inc/knnring.h ../; cd ..
-	$(MPICC) tester_mpi.c knnring_asynchronous.a -o $@ -lm -lopenblas -O3
+	$(MPICC) tester_asynchronous.c knnring_asynchronous.a -o $@ -lm -lopenblas -O3
 	$(MPIRUN) ./test_asynchronous

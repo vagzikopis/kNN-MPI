@@ -120,10 +120,10 @@ knnresult distrAllkNN(double * X, int n, int d, int k)
       waittime += (double)((end.tv_usec - start.tv_usec)/1.0e6 + end.tv_sec - start.tv_sec);
     }
   }
-
-  printf("process:%d kNN Time:%lf\n",id, knntime);
-  printf("process:%d Update Time: %lf\n",id, updatetime);
-  printf("process:%d Wait Time: %lf\n",id, waittime);
+  // 
+  // printf("process:%d kNN Time:%lf\n",id, knntime);
+  // printf("process:%d Update Time: %lf\n",id, updatetime);
+  // printf("process:%d Wait Time: %lf\n",id, waittime);
 
   free(X_copy);
   free(Y);
