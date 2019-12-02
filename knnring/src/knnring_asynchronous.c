@@ -9,6 +9,14 @@
 #include <time.h>
 #include "../inc/knnring.h"
 
+//! Compute distributed all-kNN of points in X, using non-blocking MPI communication
+/*!
+\param X Data points [n-by-d]
+\param n Number of data points [scalar]
+\param d Number of dimensions [scalar]
+\param k Number of neighbors [scalar]
+\return The kNN result
+*/
 knnresult distrAllkNN(double * X, int n, int d, int k)
 {
   knnresult result;
@@ -105,15 +113,24 @@ knnresult distrAllkNN(double * X, int n, int d, int k)
   return result;
 }
 
+//! Compute k nearest neighbors of each point in X [n-by-d]
+/*!
+\param X Corpus data points [n-by-d]
+\param Y Query data points [m-by-d]
+\param n Number of data points [scalar]
+\param d Number of dimensions [scalar]
+\param k Number of neighbors [scalar]
+\return The kNN result
+*/
 knnresult kNN(double *X, double *Y, int n, int m,int d, int k)
 {
   knnresult result;
+  // Check for valid parameters //
   if(k<=0 || k>n)
   {
     printf("\033[31m" "\t\t\tK must be >0 and <=n\n" "\033[0m" );
     return result;
   }
-  struct timeval start,end;
   double* D = calloc(n*m,sizeof(double));
   knnresult *result_ptr;
 
@@ -122,9 +139,10 @@ knnresult kNN(double *X, double *Y, int n, int m,int d, int k)
   result.k = k;
   result_ptr->nidx = malloc((m*k)*sizeof(int));
   result_ptr->ndist = calloc((m*k),sizeof(double));
-  gettimeofday(&start,NULL);
+  // Calculate distances between points //
+  // and store the result in a MxN array //
   calcDistance(X,Y,n,m,d,D);
-  gettimeofday(&end,NULL);
+
   // printf("Distance time:%lf\n",(double)((end.tv_usec - start.tv_usec)/1.0e6 + end.tv_sec - start.tv_sec));
   double *tempCol = malloc(n*sizeof(double));
   int *tempIdx = malloc(n*sizeof(int));
@@ -134,9 +152,12 @@ knnresult kNN(double *X, double *Y, int n, int m,int d, int k)
   {
     for(int j=0; j<n; j++)
     {
+      // Temporary store distances of //
+      // all points(Y) from all points(X) //
       tempCol[j] = D[j + n*i];
       tempIdx[j] = j;
     }
+    // Select the k-nearest neighbours for all points(Y) //
     result_ptr->ndist[m*(k-1)+i] = quickselect(tempCol,0,n-1,k,tempIdx,&index);
     result_ptr->nidx[m*(k-1)+i] = tempIdx[index];
     for(int j=k-2; j>=0; j--)
@@ -151,6 +172,9 @@ knnresult kNN(double *X, double *Y, int n, int m,int d, int k)
   return result;
 }
 
+// This function calculates distances between m-points stored in //
+// Y from n-points stored in X. The result is stored in array D, //
+// with size MxN.                                               //
 void calcDistance(double *X, double *Y, int n, int m, int d, double* D)
 {
   double alpha = -2.0;
@@ -189,20 +213,21 @@ void calcDistance(double *X, double *Y, int n, int m, int d, double* D)
   free(powX);
   free(powY);
 }
+// Swap double values //
 void swap_1(double* a, double* b)
 {
     double t = *a;
     *a = *b;
     *b = t;
 }
-
+// Swap int values //
 void swap_2(int* a, int* b)
 {
     int t = *a;
     *a = *b;
     *b = t;
 }
-
+// Partition used for quickselect //
 int partition(double* arr, int l, int r, int* idx)
 {
     double x = *(arr + r);
@@ -221,6 +246,8 @@ int partition(double* arr, int l, int r, int* idx)
     return i;
 }
 
+// Implement k-select and return the value of the k-selected item     //
+// Also, the index of the k-selected is stored in return_idx variable //
 double quickselect(double* arr, int l, int r, int k, int* idx, int* return_idx)
 {
     if (k > 0 && k <= r - l + 1)
