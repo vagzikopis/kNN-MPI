@@ -17,17 +17,20 @@
 */
 knnresult kNN(double *X, double *Y, int n, int m,int d, int k)
 {
-  knnresult result;
   // Check for valid parameters //
   if(k<=0 || k>n)
   {
     printf("\033[31m" "\t\t\tK must be >0 and <=n\n" "\033[0m" );
     return result;
   }
+  double *tempCol = malloc(n*sizeof(double));
+  int *tempIdx = malloc(n*sizeof(int));
+  int index;
   double* D = calloc(n*m,sizeof(double));
+  knnresult result;
   knnresult *result_ptr;
-
   result_ptr = &result;
+
   result.m = m;
   result.k = k;
   result_ptr->nidx = malloc((m*k)*sizeof(int));
@@ -36,11 +39,6 @@ knnresult kNN(double *X, double *Y, int n, int m,int d, int k)
   // and store the result in a MxN array //
   calcDistance(X,Y,n,m,d,D);
 
-  // printf("Distance time:%lf\n",(double)((end.tv_usec - start.tv_usec)/1.0e6 + end.tv_sec - start.tv_sec));
-  double *tempCol = malloc(n*sizeof(double));
-  int *tempIdx = malloc(n*sizeof(int));
-  int index;
-  int zeros = 0;
   for(int i=0; i<m; i++)
   {
     for(int j=0; j<n; j++)
