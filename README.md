@@ -4,14 +4,11 @@
 How to run:
 * Git clone the repository
 * Open a terminal in the repository
-* Type : 
-  - ``` cd knnring/ ```
-  - ``` make ```
-  - ``` cd ..```
-* To test sequential implementation : ```make test_sequential```
+* Type :  ``` make ```
 
-* To test synchronous(blocking) implementation : ```make test_synchronous```
+* To execute sequential implementation : ```./test_sequential n d k ```
 
-* To test asynchronous(non-blocking) implementation : ```make test_asynchronous```
+* To execute synchronous(blocking) implementation : ```mpirun -np $number_of_processes ./test_synchronous n d k```
 
-* To change parameters change variables : ```n(number of points), d(dimensions), k(k-nearest)``` 
+* To execute asynchronous(non-blocking) implementation : ```mpirun -np $number_of_processes ./test_asynchronous n d k```
+
