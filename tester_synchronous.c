@@ -45,16 +45,6 @@ int testMPI( int    const n,
   MPI_Comm_rank(MPI_COMM_WORLD, &id); // Task ID
   MPI_Comm_size(MPI_COMM_WORLD, &p);  // # tasks
 
-  FILE *fp;
-  char filename[27], extension[20];
-  if(id == 0)
-  {
-    strcpy(extension, "synchronous.txt");
-    sprintf(filename, "%d", p);
-    strcat(filename,extension);
-    fp = fopen(filename,"a");
-  }
-
   // allocate corpus for each process
   double  * const corpus = (double * ) malloc( n*d * sizeof(double) );
 
@@ -138,8 +128,7 @@ int testMPI( int    const n,
     //Stop time measurments
     end = MPI_Wtime();
     time = end-start;
-    fprintf(fp,"%d,%d,%d,%lf\n",n*p,d,k,time);
-    fclose(fp);
+    printf("n=%d, d=%d, k=%d\nExecution Time:%lf\n",n*p,d,k,time);
     // ---------- Validate results
     isValid = validateResult( knnresall, corpusAll, corpusAll,
                               n*p, n*p, d, k, ap );
@@ -180,59 +169,37 @@ int testMPI( int    const n,
 int main(int argc, char *argv[])
 {
 
-
+  if(argc < 3 )
+  {
+    printf("Please enter 3 arguments.\nn(corpus per process size)\nd(dimensions)\nk(nearest neighbors)\n");
+  }
+  int n = atoi(argv[1]);
+  int d = atoi(argv[2]);
+  int k = atoi(argv[3]);
   MPI_Init(&argc, &argv);       // initialize MPI
-  int nstart=500  ,nend=10001   , nstep=500;   // # corpus elements per process
-  int dstart=10   , dend=31   , dstep=10; // # dimensions
-  int kstart=10   , kend=51   , kstep=10; // # neighbors
+
   struct timeval start, end;
   int id,p;                       // PID
   MPI_Comm_rank(MPI_COMM_WORLD, &id); // Task ID
   MPI_Comm_size(MPI_COMM_WORLD, &p);
+  MPI_Barrier(MPI_COMM_WORLD);
 
-  if(id == 0)
-  {
-    FILE *fp;
-    char filename[27], extension[20];
-    strcpy(extension, "synchronous.txt");
-    sprintf(filename, "%d", p);
-    strcat(filename,extension);
-    fp = fopen(filename,"a");
-    fprintf(fp, "n,d,k,time\n");
-    fclose(fp);
-  }
-  for(int n=nstart; n<nend; n+=nstep)
-  {
-    for(int k=kstart; k<kend; k+=kstep)
-    {
-      for(int d=dstart; d<dend; d+=dstep)
+    // ============================== RUN EXPERIMENTS
+    int isValidC = testMPI( n, d, k, COLMAJOR);
+    MPI_Barrier(MPI_COMM_WORLD);
+    // ============================== ONLY MASTER OUTPUTS
+
+    if (id == 0) {                // ..... MASTER gets result
+
+      if(isValidC)
       {
-        MPI_Barrier(MPI_COMM_WORLD);
-        MPI_Comm_rank(MPI_COMM_WORLD, &id); // Task ID
-        MPI_Comm_size(MPI_COMM_WORLD, &p);
-
-        // ============================== RUN EXPERIMENTS
-        int isValidC = testMPI( n, d, k, COLMAJOR);
-        // int isValidR = testMPI( n, d, k, ROWMAJOR );
-        MPI_Barrier(MPI_COMM_WORLD);
-
-
-        // ============================== ONLY MASTER OUTPUTS
-
-        // if (id == 0) {                // ..... MASTER gets result
-        //
-        //   if(isValidC)
-        //   {
-        //     printf("Tester validation: "GRN"%s NEIGHBORS\n"RESET, STR_CORRECT_WRONG[isValidC]);
-        //   }else
-        //   {
-        //     printf("Tester validation: "RED"%s NEIGHBORS\n"RESET, STR_CORRECT_WRONG[isValidC]);
-        //   }
-        //
-        // }
+        printf("Tester validation: "GRN"%s NEIGHBORS\n"RESET, STR_CORRECT_WRONG[isValidC]);
+      }else
+      {
+        printf("Tester validation: "RED"%s NEIGHBORS\n"RESET, STR_CORRECT_WRONG[isValidC]);
       }
+
     }
-  }
 
   MPI_Finalize();               // clean-up
 

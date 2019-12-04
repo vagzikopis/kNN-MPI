@@ -25,45 +25,35 @@
 
 int main()
 {
-  FILE *fp = fopen("sequentialdata.txt", "a");
-  fprintf(fp, "n,d,k,time\n");
-  struct timeval start, end;
-  int nstart=500  , nend=25500 , nstep=500;                    // corpus
-  int dstart=10   , dend=31   , dstep=10;                      // dimensions
-  int kstart=10   , kend=51   , kstep=10;                     // # neighbors
-  for(int n=nstart; n<nend; n+=nstep)
+  if(argc < 3 )
   {
-    for(int k=kstart; k<kend; k+=kstep)
-    {
-      for(int d=dstart; d<dend; d+=dstep)
-      {
-        double  * corpus = (double * ) malloc( n*d * sizeof(double) );
-
-
-        for (int i=0;i<n*d;i++)
-        {
-          corpus[i] = ( (double) (rand()) ) / (double) RAND_MAX;
-        }
-
-        gettimeofday(&start,NULL);
-        knnresult knnres = kNN( corpus, corpus, n, n, d, k );
-        gettimeofday(&end,NULL);
-        fprintf(fp,"%d,%d,%d,%lf\n",n,d,k,(double)((end.tv_usec - start.tv_usec)/1.0e6 + end.tv_sec - start.tv_sec));
-        // int isValidC = validateResult( knnres, corpus, corpus, p*n, p*n, d, k, COLMAJOR );
-        // // int isValidR = validateResult( knnres, corpus, query, p*n, p*m, d, k, ROWMAJOR );
-        // if(isValidC)
-        // {
-        //   printf("Tester validation: "GRN"%s NEIGHBORS\n"RESET, STR_CORRECT_WRONG[isValidC]);
-        // }else
-        // {
-        //   printf("Tester validation: "RED"%s NEIGHBORS\n"RESET, STR_CORRECT_WRONG[isValidC]);
-        // }
-
-        free( corpus );
-      }
-    }
+    printf("Please enter 3 arguments.\nn(corpus per process size)\nd(dimensions)\nk(nearest neighbors)\n");
   }
-  fclose(fp);
+  int n = atoi(argv[1]);
+  int d = atoi(argv[2]);
+  int k = atoi(argv[3]);
+  struct timeval start, end;
+  double  * corpus = (double * ) malloc( n*d * sizeof(double) );
+
+  for (int i=0;i<n*d;i++)
+  {
+    corpus[i] = ( (double) (rand()) ) / (double) RAND_MAX;
+  }
+
+  gettimeofday(&start,NULL);
+  knnresult knnres = kNN( corpus, corpus, n, n, d, k );
+  gettimeofday(&end,NULL);
+  printf("n=%d, d=%d, k=%d\nExecution Time:%lf\n",n,d,k,(double)((end.tv_usec - start.tv_usec)/1.0e6 + end.tv_sec - start.tv_sec));
+  int isValidC = validateResult( knnres, corpus, corpus, n, n, d, k, COLMAJOR );
+  if(isValidC)
+  {
+    printf("Tester validation: "GRN"%s NEIGHBORS\n"RESET, STR_CORRECT_WRONG[isValidC]);
+  }else
+  {
+    printf("Tester validation: "RED"%s NEIGHBORS\n"RESET, STR_CORRECT_WRONG[isValidC]);
+  }
+
+  free( corpus );
   return 0;
 
 }
