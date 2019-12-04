@@ -23,7 +23,7 @@
 
 #include "tester_helper.h"
 
-int main()
+int main(int argc, char *argv[])
 {
   if(argc < 3 )
   {
