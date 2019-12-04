@@ -28,7 +28,6 @@ knnresult distrAllkNN(double * X, int n, int d, int k)
 
   double *Y = malloc(n*d*sizeof(double));
   memcpy(Y,X,n*d*sizeof(double));
-  double *X_send = malloc(n*d*sizeof(double));
   double *X_recv = malloc(n*d*sizeof(double));
 
   MPI_Request request[2];
@@ -48,10 +47,11 @@ knnresult distrAllkNN(double * X, int n, int d, int k)
     if(i>0)
       memcpy(X,X_recv,n*d*sizeof(double));
 
-    if(i!=p-1)
-      memcpy(X_send,X,n*d*sizeof(double));
-      MPI_Isend(X_send, n*d, MPI_DOUBLE, dst, tag, MPI_COMM_WORLD, &request[0]);
+    if(i!=p-1){
+      MPI_Isend(X, n*d, MPI_DOUBLE, dst, tag, MPI_COMM_WORLD, &request[0]);
       MPI_Irecv(X_recv, n*d, MPI_DOUBLE, rcv, tag, MPI_COMM_WORLD, &request[1]);
+    }
+
 
     if(i==0)
     {
@@ -101,14 +101,14 @@ knnresult distrAllkNN(double * X, int n, int d, int k)
       if(id-i-1<0) counter++;
 
     }
-    // Wait for MPI_Irecv to complete
-    MPI_Wait(&request[1], &status[1]);
-    // Wait for MPI_Isend to complete
-    MPI_Wait(&request[0], &status[0]);
+    if(i!=p-1)
+    {
+      // Wait for MPI requests to complete
+      MPI_Wait(&request[0], &status[0]);
+      MPI_Wait(&request[1], &status[1]);
+    }
   }
-
   free(X_recv);
-  free(X_send);
   free(Y);
   return result;
 }
