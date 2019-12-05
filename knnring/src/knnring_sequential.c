@@ -17,6 +17,10 @@
 */
 knnresult kNN(double *X, double *Y, int n, int m,int d, int k)
 {
+  knnresult result;
+  knnresult *result_ptr;
+  result_ptr = &result;
+  int index;
   // Check for valid parameters //
   if(k<=0 || k>n)
   {
@@ -25,11 +29,9 @@ knnresult kNN(double *X, double *Y, int n, int m,int d, int k)
   }
   double *tempCol = malloc(n*sizeof(double));
   int *tempIdx = malloc(n*sizeof(int));
-  int index;
+ 
   double* D = calloc(n*m,sizeof(double));
-  knnresult result;
-  knnresult *result_ptr;
-  result_ptr = &result;
+  
 
   result.m = m;
   result.k = k;
