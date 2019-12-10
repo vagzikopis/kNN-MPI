@@ -1,3 +1,5 @@
+#define RED   "\x1B[31m"
+#define RESET "\x1B[0m"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
@@ -25,7 +27,8 @@ knnresult distrAllkNN(double * X, int n, int d, int k)
   double result_distances[k],temp_distances[k],finalD[k];
   int result_indexes[k],temp_indexes[k],finalI[k];
   int counter = 1;
-
+  double waittime=0;
+  struct timeval start, end;
   double *Y = malloc(n*d*sizeof(double));
   memcpy(Y,X,n*d*sizeof(double));
   double *X_recv = malloc(n*d*sizeof(double));
@@ -37,6 +40,7 @@ knnresult distrAllkNN(double * X, int n, int d, int k)
 
   for(int i=0; i<p; i++)
   {
+    // Determine sender - receiver for each process based on their process id //
     dst = id+1;
     rcv = id-1;
     if(id==0)
@@ -46,13 +50,14 @@ knnresult distrAllkNN(double * X, int n, int d, int k)
 
     if(i>0)
       memcpy(X,X_recv,n*d*sizeof(double));
-
+    //                Non-Blocking communication               //  
+    // Send a communication request and start kNN calculations //
     if(i!=p-1){
       MPI_Isend(X, n*d, MPI_DOUBLE, dst, tag, MPI_COMM_WORLD, &request[0]);
       MPI_Irecv(X_recv, n*d, MPI_DOUBLE, rcv, tag, MPI_COMM_WORLD, &request[1]);
     }
 
-
+    // If i==0 just calculate kNN and skip result-update //
     if(i==0)
     {
       result = kNN(X,Y,n,n,d,k);
@@ -71,6 +76,7 @@ knnresult distrAllkNN(double * X, int n, int d, int k)
       }
     }else
     {
+    // Calculate kNN and update local result //
       temp_result = kNN(X,Y,n,n,d,k);
       for(int j=0; j<n; j++)
       {
@@ -101,12 +107,20 @@ knnresult distrAllkNN(double * X, int n, int d, int k)
       if(id-i-1<0) counter++;
 
     }
+    // If this is the last iteration skip communication requests //
     if(i!=p-1)
     {
+      gettimeofday(&start,NULL);
       // Wait for MPI requests to complete
       MPI_Wait(&request[0], &status[0]);
       MPI_Wait(&request[1], &status[1]);
+      gettimeofday(&end,NULL);
+      waittime += (double)((end.tv_usec - start.tv_usec)/1.0e6 + end.tv_sec - start.tv_sec);
     }
+  }
+  if(id==0)
+  {
+    printf("Approximate Time lost on communications:"RED"%lf\n"RESET, waittime);
   }
   free(X_recv);
   free(Y);
@@ -143,7 +157,6 @@ knnresult kNN(double *X, double *Y, int n, int m,int d, int k)
   // and store the result in a MxN array //
   calcDistance(X,Y,n,m,d,D);
 
-  // printf("Distance time:%lf\n",(double)((end.tv_usec - start.tv_usec)/1.0e6 + end.tv_sec - start.tv_sec));
   double *tempCol = malloc(n*sizeof(double));
   int *tempIdx = malloc(n*sizeof(int));
   int index;
