@@ -9,9 +9,8 @@ How to run:
 * To execute sequential implementation :
   ```./test_sequential n_arg d_arg k_arg ```
 
-* To execute synchronous(blocking) implementation : 
-  ```mpirun -np $number_of_processes ./test_synchronous n_arg d_arg k_arg```
+* To execute synchronous(blocking) implementation :
+  ```mpirun -np $number_of_processes ./test_synchronous n_per_process_arg d_arg k_arg```
 
-* To execute asynchronous(non-blocking) implementation : 
-  ```mpirun -np $number_of_processes ./test_asynchronous n_arg d_arg k_arg```
-
+* To execute asynchronous(non-blocking) implementation :
+  ```mpirun -np $number_of_processes ./test_asynchronous n_per_process_arg d_arg k_arg```
