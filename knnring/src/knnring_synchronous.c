@@ -1,3 +1,5 @@
+#define RED   "\x1B[31m"
+#define RESET "\x1B[0m"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
@@ -27,20 +29,17 @@ knnresult distrAllkNN(double * X, int n, int d, int k)
   MPI_Comm_size(MPI_COMM_WORLD, &p); // # tasks
   double *X_copy = malloc(n*d*sizeof(double));
   memcpy(Y,X,n*d*sizeof(double));
-  double waittime=0, knntime=0,updatetime=0;
+  double waittime=0;
   struct timeval start, end;
   double result_distances[k],temp_distances[k],finalD[k];
   int result_indexes[k],temp_indexes[k],finalI[k];
   int counter = 1;
   for(int i=0; i<p; i++)
   {
+    //If i==0 calculate kNN and skip result update //
     if(i==0)
     {
-      gettimeofday(&start,NULL);
       result = kNN(X,Y,n,n,d,k);
-      gettimeofday(&end,NULL);
-      knntime += (double)((end.tv_usec - start.tv_usec)/1.0e6 + end.tv_sec - start.tv_sec);
-      gettimeofday(&start,NULL);
       for(int i=0; i<n; i++)
       {
         for(int j=0; j<k; j++)
@@ -54,17 +53,10 @@ knnresult distrAllkNN(double * X, int n, int d, int k)
           }
         }
       }
-      gettimeofday(&end,NULL);
-      updatetime += (double)((end.tv_usec - start.tv_usec)/1.0e6 + end.tv_sec - start.tv_sec);
-
     }else
     {
-      gettimeofday(&start,NULL);
+      // Calculate kNN and update your local result //
       temp_result = kNN(X,Y,n,n,d,k);
-      gettimeofday(&end,NULL);
-      knntime += (double)((end.tv_usec - start.tv_usec)/1.0e6 + end.tv_sec - start.tv_sec);
-
-      gettimeofday(&start,NULL);
       for(int j=0; j<n; j++)
       {
         for(int w=0; w<k; w++)
@@ -92,12 +84,12 @@ knnresult distrAllkNN(double * X, int n, int d, int k)
         }
       }
       if(id-i-1<0) counter++;
-      gettimeofday(&end,NULL);
-      updatetime += (double)((end.tv_usec - start.tv_usec)/1.0e6 + end.tv_sec - start.tv_sec);
     }
+    // If this is the last iteration skip communication with other processes //
     if (i!=p-1)
     {
       gettimeofday(&start,NULL);
+      // Determine sender - receiver for each process based on their process id //
       if(id%2 == 0)
       {
         dst = id+1;
@@ -110,6 +102,8 @@ knnresult distrAllkNN(double * X, int n, int d, int k)
         {
           rcv=p-1;
         }
+        //              Blocking communication                //
+        //  Even processes first send and then receive corpus //
         MPI_Send(X, n*d, MPI_DOUBLE, dst, tag, MPI_COMM_WORLD);
         MPI_Recv(X, n*d, MPI_DOUBLE, rcv, tag, MPI_COMM_WORLD, &Stat);
       }else{
@@ -120,6 +114,8 @@ knnresult distrAllkNN(double * X, int n, int d, int k)
         }
         rcv = id-1;
         memcpy(X_copy,X,n*d*sizeof(double));
+        //              Blocking communication                //
+        //  Odd processes first receive and then send their corpus //
         MPI_Recv(X, n*d, MPI_DOUBLE, rcv, tag, MPI_COMM_WORLD, &Stat);
         MPI_Send(X_copy, n*d, MPI_DOUBLE, dst, tag, MPI_COMM_WORLD);
       }
@@ -127,10 +123,10 @@ knnresult distrAllkNN(double * X, int n, int d, int k)
       waittime += (double)((end.tv_usec - start.tv_usec)/1.0e6 + end.tv_sec - start.tv_sec);
     }
   }
-  //
-  // printf("process:%d kNN Time:%lf\n",id, knntime);
-  // printf("process:%d Update Time: %lf\n",id, updatetime);
-  // printf("process:%d Wait Time: %lf\n",id, waittime);
+  if(id==0)
+  {
+    printf("Approximate Time lost on communications:"RED"%lf\n"RESET, waittime);
+  }
 
   free(X_copy);
   free(Y);
