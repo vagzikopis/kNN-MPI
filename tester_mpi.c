@@ -128,7 +128,7 @@ int testMPI( int    const n,
     //Stop time measurments
     end = MPI_Wtime();
     time = end-start;
-    printf("n=%d, d=%d, k=%d\nExecution Time:%lf\n",n*p,d,k,time);
+    printf("n=%d, d=%d, k=%d\nExecution Time:"GRN"%lf\n"RESET,n*p,d,k,time);
     // ---------- Validate results
     isValid = validateResult( knnresall, corpusAll, corpusAll,
                               n*p, n*p, d, k, ap );
