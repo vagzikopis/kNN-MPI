@@ -1,5 +1,6 @@
 #define RED   "\x1B[31m"
 #define RESET "\x1B[0m"
+#define CYN   "\x1B[36m"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
@@ -50,7 +51,7 @@ knnresult distrAllkNN(double * X, int n, int d, int k)
 
     if(i>0)
       memcpy(X,X_recv,n*d*sizeof(double));
-    //                Non-Blocking communication               //  
+    //                Non-Blocking communication               //
     // Send a communication request and start kNN calculations //
     if(i!=p-1){
       MPI_Isend(X, n*d, MPI_DOUBLE, dst, tag, MPI_COMM_WORLD, &request[0]);
@@ -118,8 +119,23 @@ knnresult distrAllkNN(double * X, int n, int d, int k)
       waittime += (double)((end.tv_usec - start.tv_usec)/1.0e6 + end.tv_sec - start.tv_sec);
     }
   }
-  if(id==0)
+  double local_min=DBL_MAX,local_max=-DBL_MAX;
+  for(int i=0; i<result.m*k; i++)
   {
+    if (result.ndist[i] != 0 && result.ndist[i] < local_min)
+    {
+      local_min = result.ndist[i];
+    }
+    if (result.ndist[i] > local_max)
+    {
+      local_max = result.ndist[i];
+    }
+  }
+  double global_min, global_max;
+  MPI_Reduce(&local_min, &global_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&local_max, &global_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  if (id == 0) {
+    printf(CYN"Global min(zero excluded): %f\nGlobal max: %f\n"RESET, global_min, global_max);
     printf("Approximate Time lost on communications:"RED"%lf\n"RESET, waittime);
   }
   free(X_recv);
@@ -179,7 +195,6 @@ knnresult kNN(double *X, double *Y, int n, int m,int d, int k)
       result_ptr->nidx[m*j+i] = tempIdx[index];
     }
   }
-
   free(D);
   free(tempCol);
   return result;
