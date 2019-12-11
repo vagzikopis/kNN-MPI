@@ -120,15 +120,17 @@ knnresult distrAllkNN(double * X, int n, int d, int k)
     }
   }
   double local_min=DBL_MAX,local_max=-DBL_MAX;
-  for(int i=0; i<result.m*k; i++)
+  for(int i=0; i<result.m; i++)
   {
-    if (result.ndist[i] != 0 && result.ndist[i] < local_min)
+    for(in j=1; j<=k; j=j+k-1)
     {
-      local_min = result.ndist[i];
-    }
-    if (result.ndist[i] > local_max)
+      if (result.ndist[result.m*j+i] < local_min)
+      {
+        local_min = result.ndist[result.m*j+i];
+      }
+    if (result.ndist[result.m*j+i] > local_max)
     {
-      local_max = result.ndist[i];
+      local_max = result.ndist[result.m*j+i];
     }
   }
   double global_min, global_max;
